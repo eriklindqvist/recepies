@@ -1,0 +1,10 @@
+version: "2.0"
+services:
+  recepies:
+    image: recepies
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGODB_HOST=172.17.0.1
+      - DATABASE=recepies
+    restart: on-failure
