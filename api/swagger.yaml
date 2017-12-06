@@ -124,6 +124,9 @@ definitions:
       id:
         type: "string"
         description: "BSON ID"
+      title:
+        type: "string"
+        description: "The recipe title"
       description:
         type: "string"
         description: "The recipe description"

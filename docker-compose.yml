@@ -7,4 +7,4 @@ services:
     environment:
       - MONGODB_HOST=172.17.0.1
       - DATABASE=recepies
-    restart: on-failure
+    restart: "no"
