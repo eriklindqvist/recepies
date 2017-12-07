@@ -10,7 +10,8 @@ import (
 type Recipe struct {
     Id     bson.ObjectId `json:"id" bson:"_id"`
     Title   string `json:"title" bson:"t"`
-    Description string `json:"description" bson:"d" `
+    Description string `json:"description" bson:"d"`
+    Ingredients []Ingredient `json:"ingredients" bson:"i"`
 }
 
 type Recepies []Recipe
