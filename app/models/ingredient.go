@@ -5,3 +5,5 @@ type Ingredient struct {
     Unit   string `json:"unit" bson:"u"`
     Name   string `json:"name" bson:"n"`
 }
+
+type Ingredients []Ingredient

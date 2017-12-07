@@ -11,11 +11,14 @@ import (
 )
 
 type RecipeController struct {
+		db *mgo.Database
 		c *mgo.Collection
 }
 
 func NewRecipeController(s *mgo.Session) *RecipeController {
-    return &RecipeController{s.DB(l.Getenv("DATABASE", "recepies")).C("recepies")}
+		db := s.DB(l.Getenv("DATABASE", "recepies"))
+
+    return &RecipeController{db, db.C("recepies")}
 }
 
 func (rc RecipeController) Create(json io.Reader) ([]byte, error) {
@@ -97,4 +100,14 @@ func (rc RecipeController) List() ([]byte, error) {
 		}
 
 		return json.Marshal(r)
+}
+
+func (rc RecipeController) Ingredients() ([]byte, error) {
+		var names []string
+
+		if err := rc.c.Find(nil).Distinct("i.n", &names); err != nil {
+			err = l.NewError(http.StatusInternalServerError, err.Error())
+		}
+
+		return json.Marshal(names)
 }

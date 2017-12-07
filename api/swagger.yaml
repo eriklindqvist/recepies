@@ -118,6 +118,20 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Recipe"
+  /ingredients:
+    get:
+      tags:
+      - "ingredients"
+      summary: "List all distinct ingredients for all recepies"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              type: "string"
 definitions:
   Recipe:
     properties:
@@ -130,3 +144,19 @@ definitions:
       description:
         type: "string"
         description: "The recipe description"
+      ingredient:
+        type: "array"
+        items:
+          $ref: "#/definitions/Ingredient"
+  Ingredient:
+    properties:
+      amount:
+        type: "integer"
+        format: "uint16"
+        description: "Amount of ingredient"
+      unit:
+        type: "string"
+        description: "Unit of the ingredient"
+      name:
+        type: "string"
+        description: "Name of the ingredient"

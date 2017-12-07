@@ -56,7 +56,7 @@ func ListRecepies(w http.ResponseWriter, r *http.Request) {
 	}, w, r)
 }
 
-func ListRecepies(w http.ResponseWriter, r *http.Request) {
+func ListIngredients(w http.ResponseWriter, r *http.Request) {
 	Handle(func(w http.ResponseWriter, r *http.Request) ([]byte, error) {
 		return rc.Ingredients()
 	}, w, r)
