@@ -3,9 +3,11 @@ package controllers
 import (
 	"net/http"
 	"io"
+	"os"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"encoding/json"
+	"mime/multipart"
 	l "../lib"
 	m "../models"
 )
@@ -100,6 +102,63 @@ func (rc RecipeController) List() ([]byte, error) {
 		}
 
 		return json.Marshal(r)
+}
+
+func (rc RecipeController) Upload(id string, r *http.Request) ([]byte, error) {
+	var (
+		reader *multipart.Reader
+	 	part *multipart.Part
+	 	dst *os.File
+	 	err error
+		ending string
+		ok bool
+	)
+
+	if !bson.IsObjectIdHex(id) {
+			return nil, l.NewError(http.StatusNotFound, "Recipe not found")
+	}
+
+	recipe := new(m.Recipe)
+
+	if err := recipe.Find(bson.ObjectIdHex(id), rc.c); err != nil {
+			return nil, l.NewError(http.StatusNotFound, "Recipe not found")
+	}
+
+	if reader, err = r.MultipartReader(); err != nil {
+		return nil, l.NewError(http.StatusInternalServerError, err.Error())
+	}
+
+	ctypes := map[string]string {
+		"image/jpeg":".jpg",
+		"image/gif":".gif",
+		"image/png":".png",
+	}
+
+	for {
+			if part, err = reader.NextPart(); err == io.EOF {
+				break
+			}
+
+			ct := part.Header.Get("Content-Type")
+
+			if ending, ok = ctypes[ct]; !ok {
+				return nil, l.NewError(http.StatusUnsupportedMediaType, "Illegal content type")
+			}
+
+			filename := l.Getenv("FILEBASE", "/home/erik") + "/" + id + ending
+
+			if dst, err = os.Create(filename); err != nil {
+          return nil, l.NewError(http.StatusInternalServerError, err.Error())
+      }
+
+			defer dst.Close()
+
+			if _, err = io.Copy(dst, part); err != nil {
+				return nil, l.NewError(http.StatusInternalServerError, err.Error())
+		}
+	}
+
+	return nil,nil
 }
 
 func (rc RecipeController) Ingredients() ([]byte, error) {

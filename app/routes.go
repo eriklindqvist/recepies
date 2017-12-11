@@ -15,6 +15,7 @@ func NewRoutes(rc c.RecipeController) []Route {
 		Route{"UpdateRecipe", "PUT",    "/recipe/{id}", UpdateRecipe},
 		Route{"DeleteRecipe",	"DELETE", "/recipe/{id}",	DeleteRecipe},
 		Route{"ListRecepies", "GET",    "/recepies",    ListRecepies},
+		Route{"UploadImage",  "POST",   "/recipe/{id}/upload",  UploadImage},
 
 		Route{"ListIngredients", "GET",    "/ingredients",    ListIngredients},
 	}
@@ -53,6 +54,12 @@ func DeleteRecipe(w http.ResponseWriter, r *http.Request) {
 func ListRecepies(w http.ResponseWriter, r *http.Request) {
 	Handle(func(w http.ResponseWriter, r *http.Request) ([]byte, error) {
 		return rc.List()
+	}, w, r)
+}
+
+func UploadImage(w http.ResponseWriter, r *http.Request) {
+	Handle(func(w http.ResponseWriter, r *http.Request) ([]byte, error) {
+		return rc.Upload(mux.Vars(r)["id"], r)
 	}, w, r)
 }
 

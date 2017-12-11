@@ -7,4 +7,6 @@ services:
     environment:
       - MONGODB_HOST=172.17.0.1
       - DATABASE=recepies
-    restart: "no"
+      - FILEBASE=/files
+    volumes:
+      - /tmp/files:/files
