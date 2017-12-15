@@ -11,6 +11,7 @@ type Recipe struct {
     Id     bson.ObjectId `json:"id" bson:"_id"`
     Title   string `json:"title" bson:"t"`
     Description string `json:"description" bson:"d"`
+    Url string `json:"url" bson:"u"`
     Ingredients []Ingredient `json:"ingredients" bson:"i"`
 }
 
