@@ -168,6 +168,9 @@ definitions:
       description:
         type: "string"
         description: "The recipe description"
+      url:
+        type: "string"
+        description: "URL to the original recipe"
       ingredient:
         type: "array"
         items:
