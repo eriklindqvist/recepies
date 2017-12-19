@@ -30,10 +30,10 @@ or to run in docker:
 docker-compose up
 ```
 
-## Wish list
-- Rating of recepies
-- Comments on recepies
-- Images on recepies
-- Description on recepies
-- Ingredients
-- Tags
+## TODO
+- [ ] Rating of recepies
+- [ ] Comments on recepies
+- [X] Images on recepies
+- [X] Description on recepies
+- [X] Ingredients
+- [ ] Tags
