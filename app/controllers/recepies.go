@@ -8,8 +8,8 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"encoding/json"
 	"mime/multipart"
-	l "../lib"
-	m "../models"
+	l "github.com/eriklindqvist/recepies/app/lib"
+	m "github.com/eriklindqvist/recepies/app/models"
 )
 
 type RecipeController struct {
@@ -169,4 +169,14 @@ func (rc RecipeController) Ingredients() ([]byte, error) {
 		}
 
 		return json.Marshal(names)
+}
+
+func (rc RecipeController) ListNames() ([]byte, error) {
+	var r []struct{ Id  bson.ObjectId `json:"id" bson:"_id"`; Title string `json:"title" bson:"t"` }
+
+	if err := rc.c.Find(nil).Select(bson.M{"t": 1}).Limit(100).All(&r); err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(r)
 }

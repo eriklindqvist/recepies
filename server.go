@@ -1,7 +1,7 @@
 package main
 
 import (
-	sw "./app"
+	"github.com/eriklindqvist/recepies/app"
 	"log"
 	"net/http"
 )
@@ -9,7 +9,7 @@ import (
 func main() {
 	log.Printf("Server started")
 
-	router := sw.NewRouter()
+	router := app.NewRouter()
 
 	log.Fatal(http.ListenAndServe(":3000", router))
 }

@@ -142,6 +142,20 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Recipe"
+  /recepies/names:
+    get:
+      tags:
+      - "recepies"
+      summary: "List recepie names"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/RecipeNames"
   /ingredients:
     get:
       tags:
@@ -161,7 +175,7 @@ definitions:
     properties:
       id:
         type: "string"
-        description: "BSON ID"
+        description: "BSON ObjectID"
       title:
         type: "string"
         description: "The recipe title"
@@ -175,6 +189,14 @@ definitions:
         type: "array"
         items:
           $ref: "#/definitions/Ingredient"
+  RecipeNames:
+    properties:
+      id:
+        type: "string"
+        description: "BSON ObjectID"
+      title:
+        type: "string"
+        description: "The recipe title"
   Ingredient:
     properties:
       amount:

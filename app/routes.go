@@ -3,7 +3,7 @@ package app
 import (
 	"net/http"
 	"github.com/gorilla/mux"
-	c "./controllers"
+	c "github.com/eriklindqvist/recepies/app/controllers"
 )
 
 func NewRoutes(rc c.RecipeController) []Route {
@@ -18,6 +18,7 @@ func NewRoutes(rc c.RecipeController) []Route {
 		Route{"UploadImage",  "POST",   "/recipe/{id}/upload",  UploadImage},
 
 		Route{"ListIngredients", "GET",    "/ingredients",    ListIngredients},
+		Route{"ListRecipeNames", "GET",    "/recepies/names",    ListNames},
 	}
 }
 
@@ -66,5 +67,11 @@ func UploadImage(w http.ResponseWriter, r *http.Request) {
 func ListIngredients(w http.ResponseWriter, r *http.Request) {
 	Handle(func(w http.ResponseWriter, r *http.Request) ([]byte, error) {
 		return rc.Ingredients()
+	}, w, r)
+}
+
+func ListNames(w http.ResponseWriter, r *http.Request) {
+	Handle(func(w http.ResponseWriter, r *http.Request) ([]byte, error) {
+		return rc.ListNames()
 	}, w, r)
 }

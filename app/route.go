@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"github.com/gorilla/mux"
 	"gopkg.in/mgo.v2"
-	l "./lib"
-	c "./controllers"
+	l "github.com/eriklindqvist/recepies/app/lib"
+	c "github.com/eriklindqvist/recepies/app/controllers"
 )
 
 type Route struct {
