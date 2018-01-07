@@ -1,3 +1,4 @@
+
 package controllers
 
 import (
@@ -8,6 +9,11 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"encoding/json"
 	"mime/multipart"
+	"github.com/nfnt/resize"
+	"image"
+	"image/jpeg"
+	"image/png"
+	"image/gif"
 	l "github.com/eriklindqvist/recepies/app/lib"
 	m "github.com/eriklindqvist/recepies/app/models"
 )
@@ -110,7 +116,6 @@ func (rc RecipeController) Upload(id string, r *http.Request) ([]byte, error) {
 	 	part *multipart.Part
 	 	dst *os.File
 	 	err error
-		ending string
 		ok bool
 	)
 
@@ -141,11 +146,13 @@ func (rc RecipeController) Upload(id string, r *http.Request) ([]byte, error) {
 
 			ct := part.Header.Get("Content-Type")
 
-			if ending, ok = ctypes[ct]; !ok {
+			name := part.FileName()
+
+			if _, ok = ctypes[ct]; !ok {
 				return nil, l.NewError(http.StatusUnsupportedMediaType, "Illegal content type")
 			}
 
-			filename := l.Getenv("FILEBASE", "/home/erik") + "/" + id + ending
+			filename := l.Getenv("FILEBASE", "/files") + "/" + name
 
 			if dst, err = os.Create(filename); err != nil {
           return nil, l.NewError(http.StatusInternalServerError, err.Error())
@@ -155,10 +162,56 @@ func (rc RecipeController) Upload(id string, r *http.Request) ([]byte, error) {
 
 			if _, err = io.Copy(dst, part); err != nil {
 				return nil, l.NewError(http.StatusInternalServerError, err.Error())
-		}
-	}
+			}
 
-	return nil,nil
+			file, err := os.Open(filename)
+
+			if err != nil {
+				return nil, l.NewError(http.StatusInternalServerError, err.Error())
+			}
+
+			var img image.Image
+
+			img, _, err = image.Decode(file)
+
+			if err != nil {
+				return nil, l.NewError(http.StatusInternalServerError, err.Error())
+			}
+
+			file.Close()
+
+			m := resize.Thumbnail(320, 240, img, resize.Lanczos3)
+
+			thumbsdir := l.Getenv("FILEBASE", "/files") + "/thumbs"
+
+			if _, err := os.Stat(thumbsdir); err != nil {
+    		if os.IsNotExist(err) {
+        	os.Mkdir(thumbsdir, 0777) //TODO: Move this check to system startup instead
+			  }
+			}
+
+			out, err := os.Create(thumbsdir + "/" + name)
+
+			if err != nil {
+				return nil, l.NewError(http.StatusInternalServerError, err.Error())
+			}
+
+			defer out.Close()
+
+			if (ct == "image/jpeg") {
+				jpeg.Encode(out, m, nil)
+			} else if (ct == "image/gif") {
+				gif.Encode(out, m, nil)
+			} else if (ct == "image/png") {
+				png.Encode(out, m)
+			}
+
+			recipe.Image = name
+		}
+
+	err = recipe.Update(rc.c)
+
+	return nil,err
 }
 
 func (rc RecipeController) Ingredients() ([]byte, error) {
@@ -175,7 +228,7 @@ type Names []struct{ Id  bson.ObjectId `json:"id" bson:"_id"`; Title string `jso
 
 func (rc RecipeController) ListNames() ([]byte, error) {
 	r := Names{}
-	
+
 	if err := rc.c.Find(nil).Select(bson.M{"t": 1}).Limit(100).All(&r); err != nil {
 		return nil, err
 	}

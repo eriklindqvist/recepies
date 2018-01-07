@@ -189,6 +189,9 @@ definitions:
         type: "array"
         items:
           $ref: "#/definitions/Ingredient"
+      image:
+        type: "string"
+        description: "Filename of image"
   RecipeNames:
     properties:
       id:
