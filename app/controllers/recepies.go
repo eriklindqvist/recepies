@@ -224,6 +224,16 @@ func (rc RecipeController) Ingredients() ([]byte, error) {
 		return json.Marshal(names)
 }
 
+func (rc RecipeController) Units() ([]byte, error) {
+		var units []string
+
+		if err := rc.c.Find(nil).Distinct("i.u", &units); err != nil {
+			err = l.NewError(http.StatusInternalServerError, err.Error())
+		}
+
+		return json.Marshal(units)
+}
+
 type Names []struct{ Id  bson.ObjectId `json:"id" bson:"_id"`; Title string `json:"title" bson:"t"` }
 
 func (rc RecipeController) ListNames() ([]byte, error) {

@@ -17,8 +17,9 @@ func NewRoutes(rc c.RecipeController) []Route {
 		Route{"ListRecepies", "GET",    "/recepies",    ListRecepies},
 		Route{"UploadImage",  "POST",   "/recipe/{id}/upload",  UploadImage},
 
-		Route{"ListIngredients", "GET",    "/ingredients",    ListIngredients},
-		Route{"ListRecipeNames", "GET",    "/recepies/names",    ListNames},
+		Route{"ListIngredients", "GET",    "/ingredients",    	ListIngredients},
+		Route{"ListUnits",			 "GET",    "/units",    				ListUnits},
+		Route{"ListRecipeNames", "GET",    "/recepies/names",   ListNames},
 	}
 }
 
@@ -67,6 +68,12 @@ func UploadImage(w http.ResponseWriter, r *http.Request) {
 func ListIngredients(w http.ResponseWriter, r *http.Request) {
 	Handle(func(w http.ResponseWriter, r *http.Request) ([]byte, error) {
 		return rc.Ingredients()
+	}, w, r)
+}
+
+func ListUnits(w http.ResponseWriter, r *http.Request) {
+	Handle(func(w http.ResponseWriter, r *http.Request) ([]byte, error) {
+		return rc.Units()
 	}, w, r)
 }
 
