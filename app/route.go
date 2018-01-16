@@ -66,6 +66,20 @@ func NewRouter() *mux.Router {
 	return router
 }
 
+func validates(scopes []Scope, entity string, action string) bool {
+	for _, scope:= range scopes {
+		if (scope.Entity == entity) {
+			for _, act := range scope.Actions {
+				if act == action {
+					return true
+				}
+			}
+			return false
+		}
+	}
+	return false
+}
+
 func Handle(entity string, action string, endpoint Endpoint, w http.ResponseWriter, r *http.Request) {
 	authorization := r.Header.Get("Authorization")
 	regex, _ := regexp.Compile("(?:Bearer *)([^ ]+)(?: *)")
@@ -103,7 +117,10 @@ func Handle(entity string, action string, endpoint Endpoint, w http.ResponseWrit
 
 	log.Printf("scopes: %s", user.Scopes)
 
-	// TODO: Validate entity and action from token 
+	if (!validates(user.Scopes, entity, action)) {
+		http.Error(w, "Unauthorized: Insufficient privileges", http.StatusUnauthorized)
+		return
+	}
 
 	setContentType(w)
 
