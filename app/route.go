@@ -1,13 +1,16 @@
 package app
 
 import (
+	"os"
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
 	"github.com/gorilla/mux"
 	"gopkg.in/mgo.v2"
 	l "github.com/eriklindqvist/recepies/app/lib"
 	c "github.com/eriklindqvist/recepies/app/controllers"
+	jwt "github.com/dgrijalva/jwt-go"
 )
 
 type Route struct {
@@ -19,6 +22,17 @@ type Route struct {
 
 type Routes []Route
 type Endpoint func(w http.ResponseWriter, r *http.Request) ([]byte, error)
+
+type Scope struct {
+  Entity string `json:"ent"`
+  Actions []string `json:"act"`
+}
+
+type User struct {
+    Username string `json:"usr"`
+    Scopes []Scope `json:"scp"`
+    jwt.StandardClaims
+}
 
 func getSession() *mgo.Session {
 		host := "mongodb://" + l.Getenv("MONGODB_HOST", "localhost")
@@ -52,7 +66,45 @@ func NewRouter() *mux.Router {
 	return router
 }
 
-func Handle(endpoint Endpoint, w http.ResponseWriter, r *http.Request) {
+func Handle(entity string, action string, endpoint Endpoint, w http.ResponseWriter, r *http.Request) {
+	authorization := r.Header.Get("Authorization")
+	regex, _ := regexp.Compile("(?:Bearer *)([^ ]+)(?: *)")
+	matches := regex.FindStringSubmatch(authorization)
+
+	if len(matches) != 2 {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	 	return
+	}
+
+	jwtToken := matches[1]
+	secret := []byte(os.Getenv("SECRET"))
+
+	// parse token
+	token, err := jwt.ParseWithClaims(jwtToken, &User{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unknown signing method")
+		}
+
+		return secret, nil
+	})
+
+	if err != nil {
+		http.Error(w, "Unauthorized: " + err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	// extract claims
+	user, ok := token.Claims.(*User)
+
+	if !ok || !token.Valid {
+		http.Error(w, "Unauthorized: " + err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	log.Printf("scopes: %s", user.Scopes)
+
+	// TODO: Validate entity and action from token 
+
 	setContentType(w)
 
 	body, err := endpoint(w, r)
