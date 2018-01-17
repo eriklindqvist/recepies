@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"github.com/gorilla/mux"
 	"gopkg.in/mgo.v2"
+	"strings"
 	l "github.com/eriklindqvist/recepies/app/lib"
 	c "github.com/eriklindqvist/recepies/app/controllers"
 	jwt "github.com/dgrijalva/jwt-go"
@@ -80,46 +81,59 @@ func validates(scopes []Scope, entity string, action string) bool {
 	return false
 }
 
+func contains(arr []string, str string) bool {
+  for _, a := range arr {
+      if a == str {
+          return true
+      }
+  }
+  return false
+}
+
 func Handle(entity string, action string, endpoint Endpoint, w http.ResponseWriter, r *http.Request) {
-	authorization := r.Header.Get("Authorization")
-	regex, _ := regexp.Compile("(?:Bearer *)([^ ]+)(?: *)")
-	matches := regex.FindStringSubmatch(authorization)
+	protected := strings.Split(os.Getenv("PROTECTED_ENDPOINTS"),",")
 
-	if len(matches) != 2 {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-	 	return
-	}
+	if contains(protected, entity+":"+action) {
+		authorization := r.Header.Get("Authorization")
+		regex, _ := regexp.Compile("(?:Bearer *)([^ ]+)(?: *)")
+		matches := regex.FindStringSubmatch(authorization)
 
-	jwtToken := matches[1]
-	secret := []byte(os.Getenv("SECRET"))
-
-	// parse token
-	token, err := jwt.ParseWithClaims(jwtToken, &User{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unknown signing method")
+		if len(matches) != 2 {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		 	return
 		}
 
-		return secret, nil
-	})
+		jwtToken := matches[1]
+		secret := []byte(os.Getenv("SECRET"))
 
-	if err != nil {
-		http.Error(w, "Unauthorized: " + err.Error(), http.StatusUnauthorized)
-		return
-	}
+		// parse token
+		token, err := jwt.ParseWithClaims(jwtToken, &User{}, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("Unknown signing method")
+			}
 
-	// extract claims
-	user, ok := token.Claims.(*User)
+			return secret, nil
+		})
 
-	if !ok || !token.Valid {
-		http.Error(w, "Unauthorized: " + err.Error(), http.StatusUnauthorized)
-		return
-	}
+		if err != nil {
+			http.Error(w, "Unauthorized: " + err.Error(), http.StatusUnauthorized)
+			return
+		}
 
-	log.Printf("scopes: %s", user.Scopes)
+		// extract claims
+		user, ok := token.Claims.(*User)
 
-	if (!validates(user.Scopes, entity, action)) {
-		http.Error(w, "Unauthorized: Insufficient privileges", http.StatusUnauthorized)
-		return
+		if !ok || !token.Valid {
+			http.Error(w, "Unauthorized: " + err.Error(), http.StatusUnauthorized)
+			return
+		}
+
+		log.Printf("scopes: %s", user.Scopes)
+
+		if (!validates(user.Scopes, entity, action)) {
+			http.Error(w, "Unauthorized: Insufficient privileges", http.StatusUnauthorized)
+			return
+		}
 	}
 
 	setContentType(w)

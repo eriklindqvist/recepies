@@ -9,5 +9,6 @@ services:
       - DATABASE=recepies
       - FILEBASE=/files
       - SECRET=eEMAr0UrJmyrLvwA2jcd8tPC93NTmE5cWpx9abAkc5quNysKZLwlxPHvOgNO
+      - PROTECTED_ENDPOINTS="recipe:create,recipe:update,recipe:delete,recipe:upload"
     volumes:
       - /tmp/files:/files
