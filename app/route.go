@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"github.com/gorilla/mux"
 	"gopkg.in/mgo.v2"
+	"crypto/rsa"
+	"io/ioutil"
 	"strings"
 	l "github.com/eriklindqvist/recepies/app/lib"
 	c "github.com/eriklindqvist/recepies/app/controllers"
@@ -47,8 +49,27 @@ func getSession() *mgo.Session {
     return s
 }
 
+func getPublicKey() *rsa.PublicKey {
+	var (
+		pub *rsa.PublicKey
+		pem []byte
+    err error
+	)
+
+	if pem, err = ioutil.ReadFile(l.Getenv("KEYFILE", "public.rsa")); err != nil {
+    panic(err)
+  }
+
+	if pub, err = jwt.ParseRSAPublicKeyFromPEM(pem); err != nil {
+		panic(err)
+	}
+
+	return pub
+}
+
 var rc = c.NewRecipeController(getSession())
 var routes = NewRoutes(*rc)
+var publicKey = getPublicKey()
 
 func NewRouter() *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
@@ -104,15 +125,10 @@ func Handle(entity string, action string, endpoint Endpoint, w http.ResponseWrit
 		}
 
 		jwtToken := matches[1]
-		secret := []byte(os.Getenv("SECRET"))
 
 		// parse token
 		token, err := jwt.ParseWithClaims(jwtToken, &User{}, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("Unknown signing method")
-			}
-
-			return secret, nil
+			return publicKey, nil
 		})
 
 		if err != nil {

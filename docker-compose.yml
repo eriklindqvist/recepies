@@ -8,7 +8,8 @@ services:
       - MONGODB_HOST=172.17.0.1
       - DATABASE=recepies
       - FILEBASE=/files
-      - SECRET=eEMAr0UrJmyrLvwA2jcd8tPC93NTmE5cWpx9abAkc5quNysKZLwlxPHvOgNO
       - PROTECTED_ENDPOINTS="recipe:create,recipe:update,recipe:delete,recipe:upload"
+      - KEYFILE=/public.rsa
     volumes:
       - /tmp/files:/files
+      - certs/public.rsa:/public.ra:ro
