@@ -3,7 +3,6 @@ package app
 import (
 	"os"
 	"fmt"
-	"log"
 	"net/http"
 	"regexp"
 	"github.com/gorilla/mux"
@@ -11,6 +10,7 @@ import (
 	"crypto/rsa"
 	"io/ioutil"
 	"strings"
+	"github.com/eriklindqvist/recepies_auth/log"
 	l "github.com/eriklindqvist/recepies/app/lib"
 	c "github.com/eriklindqvist/recepies/app/controllers"
 	jwt "github.com/dgrijalva/jwt-go"
@@ -40,11 +40,10 @@ type User struct {
 func getSession() *mgo.Session {
 		host := "mongodb://" + l.Getenv("MONGODB_HOST", "localhost")
     s, err := mgo.Dial(host)
-		log.Printf("host: %s", host)
+		log.Info(fmt.Sprintf("host: %s", host))
     // Check if connection error, is mongo running?
     if err != nil {
-
-        panic(err)
+        log.Panic(err.Error())
     }
     return s
 }
@@ -57,11 +56,11 @@ func getPublicKey() *rsa.PublicKey {
 	)
 
 	if pem, err = ioutil.ReadFile(l.Getenv("KEYFILE", "public.rsa")); err != nil {
-    panic(err)
+    log.Panic(err.Error())
   }
 
 	if pub, err = jwt.ParseRSAPublicKeyFromPEM(pem); err != nil {
-		panic(err)
+		log.Panic(err.Error())
 	}
 
 	return pub
@@ -74,9 +73,7 @@ var publicKey = getPublicKey()
 func NewRouter() *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
 	for _, route := range routes {
-		var handler http.Handler
-		handler = route.HandlerFunc
-		handler = Logger(handler, route.Name)
+		var handler = Logger(route.HandlerFunc, route.Name)
 
 		router.
 			Methods(route.Method).
@@ -120,6 +117,7 @@ func Handle(entity string, action string, endpoint Endpoint, w http.ResponseWrit
 		matches := regex.FindStringSubmatch(authorization)
 
 		if len(matches) != 2 {
+			log.Err(fmt.Sprintf("Malformed Authorization header: %s", authorization))
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		 	return
 		}
@@ -132,7 +130,8 @@ func Handle(entity string, action string, endpoint Endpoint, w http.ResponseWrit
 		})
 
 		if err != nil {
-			http.Error(w, "Unauthorized: " + err.Error(), http.StatusUnauthorized)
+			log.Err(fmt.Sprintf("Could not parse token: %s", err.Error()))
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
@@ -140,13 +139,13 @@ func Handle(entity string, action string, endpoint Endpoint, w http.ResponseWrit
 		user, ok := token.Claims.(*User)
 
 		if !ok || !token.Valid {
-			http.Error(w, "Unauthorized: " + err.Error(), http.StatusUnauthorized)
+			log.Err(fmt.Sprintf("Invalid token: %s", token))
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
-		log.Printf("scopes: %s", user.Scopes)
-
 		if (!validates(user.Scopes, entity, action)) {
+			log.Err(fmt.Sprintf("Insufficient privileges: %s", user.Scopes))
 			http.Error(w, "Unauthorized: Insufficient privileges", http.StatusUnauthorized)
 			return
 		}

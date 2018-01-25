@@ -2,6 +2,8 @@ package lib
 
 import (
   "errors"
+  "github.com/eriklindqvist/recepies_auth/log"
+  "fmt"
 )
 
 type Error interface {
@@ -23,5 +25,6 @@ func (se StatusError) Status() int {
 }
 
 func NewError(code int, message string) error {
+  log.Err(fmt.Sprintf("%d %s", code, message))
   return StatusError{code, errors.New(message)}
 }

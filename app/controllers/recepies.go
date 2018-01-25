@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"io"
 	"os"
+	"fmt"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"encoding/json"
@@ -14,6 +15,7 @@ import (
 	"image/jpeg"
 	"image/png"
 	"image/gif"
+	"github.com/eriklindqvist/recepies_auth/log"
 	l "github.com/eriklindqvist/recepies/app/lib"
 	m "github.com/eriklindqvist/recepies/app/models"
 )
@@ -33,10 +35,12 @@ func (rc RecipeController) Create(json io.Reader) ([]byte, error) {
 		r := new(m.Recipe)
 
 		if err := r.FromJson(json); err != nil {
+				log.Err(fmt.Sprintf("Error parsing JSON: %s", err.Error()))
 				return nil, l.NewError(http.StatusBadRequest, err.Error())
 		}
 
 		if err := r.Insert(rc.c); err != nil {
+				log.Err(fmt.Sprintf("Error inserting document: %s", err.Error()))
 				return nil, err
 		}
 
@@ -45,12 +49,14 @@ func (rc RecipeController) Create(json io.Reader) ([]byte, error) {
 
 func (rc RecipeController) Read(id string) ([]byte, error) {
 		if !bson.IsObjectIdHex(id) {
+				log.Err(fmt.Sprintf("Invalid BSON ID: %s", id))
         return nil, l.NewError(http.StatusNotFound, "Recipe not found")
     }
 
 		recipe := new(m.Recipe)
 
 		if err := recipe.Find(bson.ObjectIdHex(id), rc.c); err != nil {
+				log.Err(fmt.Sprintf("Error reading recipe %s: %s", id, err.Error()))
         return nil, l.NewError(http.StatusNotFound, "Recipe not found")
     }
 
@@ -59,12 +65,14 @@ func (rc RecipeController) Read(id string) ([]byte, error) {
 
 func (rc RecipeController) Update(id string, json io.Reader) ([]byte, error) {
 		if !bson.IsObjectIdHex(id) {
+				log.Err(fmt.Sprintf("Invalid BSON ID: %s", id))
 				return nil, l.NewError(http.StatusNotFound, "Recipe not found")
 		}
 
 		r := new(m.Recipe)
 
 		if err := r.FromJson(json); err != nil {
+				log.Err(fmt.Sprintf("Error parsing JSON: %s", err.Error()))
 				return nil, l.NewError(http.StatusBadRequest, err.Error())
 		}
 
@@ -77,6 +85,7 @@ func (rc RecipeController) Update(id string, json io.Reader) ([]byte, error) {
 					err = l.NewError(http.StatusNotFound, "Recipe not found")
 				}
 
+				log.Err(fmt.Sprintf("Error updating recipe: %s", err.Error()))
 				return nil, err
 		}
 
@@ -86,6 +95,7 @@ func (rc RecipeController) Update(id string, json io.Reader) ([]byte, error) {
 
 func (rc RecipeController) Delete(id string) ([]byte, error) {
 		if !bson.IsObjectIdHex(id) {
+				log.Err(fmt.Sprintf("Invalid BSON ID: %s", id))
         return nil, l.NewError(http.StatusNotFound, "Recipe not found")
     }
 
@@ -93,8 +103,12 @@ func (rc RecipeController) Delete(id string) ([]byte, error) {
 
 		err := r.Delete(rc.c)
 
-		if err != nil && err.Error() == "not found" {
+		if err != nil {
+			if err.Error() == "not found" {
 				err = l.NewError(http.StatusNotFound, "Recipe not found")
+			}
+
+			log.Err(fmt.Sprintf("Error deleting recipe: %s", err.Error()))
 		}
 
 		return nil, err
@@ -104,6 +118,7 @@ func (rc RecipeController) List() ([]byte, error) {
 		r := m.Recepies{}
 
 		if err := r.List(rc.c); err != nil {
+			log.Err(fmt.Sprintf("Error listing recepies: %s", err.Error()))
 			return nil, err
 		}
 
@@ -120,16 +135,19 @@ func (rc RecipeController) Upload(id string, r *http.Request) ([]byte, error) {
 	)
 
 	if !bson.IsObjectIdHex(id) {
+			log.Err(fmt.Sprintf("Invalid BSON ID: %s", id))
 			return nil, l.NewError(http.StatusNotFound, "Recipe not found")
 	}
 
 	recipe := new(m.Recipe)
 
 	if err := recipe.Find(bson.ObjectIdHex(id), rc.c); err != nil {
+			log.Err(fmt.Sprintf("Error reading recipe %s: %s", id, err.Error()))
 			return nil, l.NewError(http.StatusNotFound, "Recipe not found")
 	}
 
 	if reader, err = r.MultipartReader(); err != nil {
+		log.Err("Could not get multipart reader")
 		return nil, l.NewError(http.StatusInternalServerError, err.Error())
 	}
 
@@ -155,18 +173,21 @@ func (rc RecipeController) Upload(id string, r *http.Request) ([]byte, error) {
 			filename := l.Getenv("FILEBASE", "/files") + "/" + name
 
 			if dst, err = os.Create(filename); err != nil {
+					log.Err("Error creating file:")
           return nil, l.NewError(http.StatusInternalServerError, err.Error())
       }
 
 			defer dst.Close()
 
 			if _, err = io.Copy(dst, part); err != nil {
+				log.Err("Error saving file:")
 				return nil, l.NewError(http.StatusInternalServerError, err.Error())
 			}
 
 			file, err := os.Open(filename)
 
 			if err != nil {
+				log.Err("Error opening file:")
 				return nil, l.NewError(http.StatusInternalServerError, err.Error())
 			}
 
@@ -175,6 +196,7 @@ func (rc RecipeController) Upload(id string, r *http.Request) ([]byte, error) {
 			img, _, err = image.Decode(file)
 
 			if err != nil {
+				log.Err("Error decoding file:")
 				return nil, l.NewError(http.StatusInternalServerError, err.Error())
 			}
 
@@ -193,6 +215,7 @@ func (rc RecipeController) Upload(id string, r *http.Request) ([]byte, error) {
 			out, err := os.Create(thumbsdir + "/" + name)
 
 			if err != nil {
+				log.Err("Error creating thumbnail:")
 				return nil, l.NewError(http.StatusInternalServerError, err.Error())
 			}
 
@@ -218,6 +241,7 @@ func (rc RecipeController) Ingredients() ([]byte, error) {
 		var names []string
 
 		if err := rc.c.Find(nil).Distinct("i.n", &names); err != nil {
+			log.Err("Error creating file:")
 			err = l.NewError(http.StatusInternalServerError, err.Error())
 		}
 
@@ -228,6 +252,7 @@ func (rc RecipeController) Units() ([]byte, error) {
 		var units []string
 
 		if err := rc.c.Find(nil).Distinct("i.u", &units); err != nil {
+			log.Err("Error listing units:")
 			err = l.NewError(http.StatusInternalServerError, err.Error())
 		}
 
@@ -240,6 +265,7 @@ func (rc RecipeController) ListNames() ([]byte, error) {
 	r := Names{}
 
 	if err := rc.c.Find(nil).Select(bson.M{"t": 1}).Limit(100).All(&r); err != nil {
+		log.Err("Error listing names:")
 		return nil, err
 	}
 

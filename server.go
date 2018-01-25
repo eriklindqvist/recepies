@@ -2,14 +2,16 @@ package main
 
 import (
 	"github.com/eriklindqvist/recepies/app"
-	"log"
 	"net/http"
+	"github.com/eriklindqvist/recepies_auth/log"
 )
 
 func main() {
-	log.Printf("Server started")
+	log.Info("Server started")
 
 	router := app.NewRouter()
 
-	log.Fatal(http.ListenAndServe(":3000", router))
+	if err := http.ListenAndServe(":3000", router); err != nil {
+		log.Panic(err.Error())
+	}
 }
