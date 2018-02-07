@@ -3,7 +3,7 @@ package app
 import (
 	"net/http"
 	"github.com/gorilla/mux"
-	c "github.com/eriklindqvist/recepies/app/controllers"
+	c "github.com/eriklindqvist/recepies_api/app/controllers"
 )
 
 func NewRoutes(rc c.RecipeController) []Route {

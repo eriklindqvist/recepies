@@ -1,7 +1,7 @@
 version: "2.0"
 services:
   recepies:
-    image: recepies
+    image: recepies_api
     ports:
       - "3000:3000"
     environment:

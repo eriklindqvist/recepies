@@ -16,8 +16,8 @@ import (
 	"image/png"
 	"image/gif"
 	"github.com/eriklindqvist/recepies_auth/log"
-	l "github.com/eriklindqvist/recepies/app/lib"
-	m "github.com/eriklindqvist/recepies/app/models"
+	l "github.com/eriklindqvist/recepies_api/app/lib"
+	m "github.com/eriklindqvist/recepies_api/app/models"
 )
 
 type RecipeController struct {

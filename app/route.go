@@ -11,8 +11,8 @@ import (
 	"io/ioutil"
 	"strings"
 	"github.com/eriklindqvist/recepies_auth/log"
-	l "github.com/eriklindqvist/recepies/app/lib"
-	c "github.com/eriklindqvist/recepies/app/controllers"
+	l "github.com/eriklindqvist/recepies_api/app/lib"
+	c "github.com/eriklindqvist/recepies_api/app/controllers"
 	jwt "github.com/dgrijalva/jwt-go"
 )
 

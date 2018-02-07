@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/eriklindqvist/recepies/app"
+	"github.com/eriklindqvist/recepies_api/app"
 	"net/http"
 	"github.com/eriklindqvist/recepies_auth/log"
 )
