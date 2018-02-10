@@ -12,4 +12,4 @@ services:
       - KEYFILE=/public.rsa
     volumes:
       - /tmp/files:/files
-      - certs/public.rsa:/public.ra:ro
+      - certs/public.rsa:/public.rsa:ro

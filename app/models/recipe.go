@@ -12,7 +12,7 @@ type Recipe struct {
     Title   string `json:"title" bson:"t"`
     Description string `json:"description" bson:"d"`
     Url string `json:"url" bson:"u"`
-    Ingredients []Ingredient `json:"ingredients" bson:"i"`
+    Ingredients []IngredientGroup `json:"ingredients" bson:"j"`
     Image string `json:"image" bson:"m"`
 }
 
