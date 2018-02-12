@@ -240,7 +240,7 @@ func (rc RecipeController) Upload(id string, r *http.Request) ([]byte, error) {
 func (rc RecipeController) Ingredients() ([]byte, error) {
 		var names []string
 
-		if err := rc.c.Find(nil).Distinct("i.n", &names); err != nil {
+		if err := rc.c.Find(nil).Distinct("j.i.n", &names); err != nil {
 			log.Err("Error creating file:")
 			err = l.NewError(http.StatusInternalServerError, err.Error())
 		}
@@ -251,7 +251,7 @@ func (rc RecipeController) Ingredients() ([]byte, error) {
 func (rc RecipeController) Units() ([]byte, error) {
 		var units []string
 
-		if err := rc.c.Find(nil).Distinct("i.u", &units); err != nil {
+		if err := rc.c.Find(nil).Distinct("j.i.u", &units); err != nil {
 			log.Err("Error listing units:")
 			err = l.NewError(http.StatusInternalServerError, err.Error())
 		}
