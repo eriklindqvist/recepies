@@ -23,12 +23,35 @@ import (
 type RecipeController struct {
 		db *mgo.Database
 		c *mgo.Collection
+		elastic string
+}
+
+func (rc RecipeController) Elastic(method string, id string, data io.Reader) (resp *http.Response, err error) {
+	if (rc.elastic != "") {
+		c := http.Client{}
+		req, err := http.NewRequest(method, rc.elastic+"recepies/recipe/"+id, data)
+
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("Content-Type", "application/json")
+		return c.Do(req)
+	}
+	return
 }
 
 func NewRecipeController(s *mgo.Session) *RecipeController {
 		db := s.DB(l.Getenv("DATABASE", "recepies"))
+		e := os.Getenv("ELASTIC_HOST")
+		elastic := ""
 
-    return &RecipeController{db, db.C("recepies")}
+		if (e != "") {
+			p := os.Getenv("ELASTIC_PORT")
+			elastic = fmt.Sprintf("http://%s:%s/", e, p)
+		}
+
+    return &RecipeController{db, db.C("recepies"), elastic}
 }
 
 func (rc RecipeController) Create(json io.Reader) ([]byte, error) {
@@ -42,6 +65,10 @@ func (rc RecipeController) Create(json io.Reader) ([]byte, error) {
 		if err := r.Insert(rc.c); err != nil {
 				log.Err(fmt.Sprintf("Error inserting document: %s", err.Error()))
 				return nil, err
+		}
+
+		if _, err := rc.Elastic("PUT", r.Id.Hex(), json); err != nil {
+			log.Err(fmt.Sprintf("Error updating elstic: %s", err.Error()))
 		}
 
 		return r.ToJson()
@@ -89,6 +116,10 @@ func (rc RecipeController) Update(id string, json io.Reader) ([]byte, error) {
 				return nil, err
 		}
 
+		if _, err := rc.Elastic("PUT", r.Id.Hex(), json); err != nil {
+			log.Err(fmt.Sprintf("Error updating elstic: %s", err.Error()))
+		}
+
 		return r.ToJson()
 }
 
@@ -109,6 +140,10 @@ func (rc RecipeController) Delete(id string) ([]byte, error) {
 			}
 
 			log.Err(fmt.Sprintf("Error deleting recipe: %s", err.Error()))
+		}
+
+		if _, err := rc.Elastic("DELETE", r.Id.Hex(), nil); err != nil {
+			log.Err(fmt.Sprintf("Error deleting from elstic: %s", err.Error()))
 		}
 
 		return nil, err

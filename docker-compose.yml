@@ -10,6 +10,8 @@ services:
       - FILEBASE=/files
       - PROTECTED_ENDPOINTS="recipe:create,recipe:update,recipe:delete,recipe:upload"
       - KEYFILE=/public.rsa
+      - ELASTIC_HOST=localhost
+      - ELASTIC_PORT=9200
     volumes:
       - /tmp/files:/files
       - certs/public.rsa:/public.rsa:ro
