@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"fmt"
+	"bytes"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"encoding/json"
@@ -26,10 +27,14 @@ type RecipeController struct {
 		elastic string
 }
 
-func (rc RecipeController) Elastic(method string, id string, data io.Reader) (resp *http.Response, err error) {
+func (rc RecipeController) Elastic(method string, id string, data []byte) (resp *http.Response, err error) {
 	if (rc.elastic != "") {
+		url := rc.elastic+"recepies/recipe/"+id
 		c := http.Client{}
-		req, err := http.NewRequest(method, rc.elastic+"recepies/recipe/"+id, data)
+		log.Info(fmt.Sprintf("Elastic: %s %s", method, url))
+
+		d := bytes.NewReader(data)
+		req, err := http.NewRequest(method, url, d)
 
 		if err != nil {
 			return nil, err
@@ -67,11 +72,19 @@ func (rc RecipeController) Create(json io.Reader) ([]byte, error) {
 				return nil, err
 		}
 
-		if _, err := rc.Elastic("PUT", r.Id.Hex(), json); err != nil {
+		j,e := r.ToJson()
+
+		if resp, err := rc.Elastic("PUT", r.Id.Hex(), j); err != nil {
 			log.Err(fmt.Sprintf("Error updating elstic: %s", err.Error()))
+		} else {
+			defer resp.Body.Close()
+			buf := new(bytes.Buffer)
+			buf.ReadFrom(resp.Body)
+			body := buf.String()
+			log.Info(fmt.Sprintf("Response from elastic: %s", body))
 		}
 
-		return r.ToJson()
+		return j,e
 }
 
 func (rc RecipeController) Read(id string) ([]byte, error) {
@@ -116,13 +129,20 @@ func (rc RecipeController) Update(id string, json io.Reader) ([]byte, error) {
 				return nil, err
 		}
 
-		if _, err := rc.Elastic("PUT", r.Id.Hex(), json); err != nil {
+		j,e := r.ToJson()
+
+		if resp, err := rc.Elastic("PUT", r.Id.Hex(), j); err != nil {
 			log.Err(fmt.Sprintf("Error updating elstic: %s", err.Error()))
+		} else {
+			defer resp.Body.Close()
+			buf := new(bytes.Buffer)
+			buf.ReadFrom(resp.Body)
+			body := buf.String()
+			log.Info(fmt.Sprintf("Response from elastic: %s", body))
 		}
 
-		return r.ToJson()
+		return j,e
 }
-
 
 func (rc RecipeController) Delete(id string) ([]byte, error) {
 		if !bson.IsObjectIdHex(id) {
@@ -142,8 +162,14 @@ func (rc RecipeController) Delete(id string) ([]byte, error) {
 			log.Err(fmt.Sprintf("Error deleting recipe: %s", err.Error()))
 		}
 
-		if _, err := rc.Elastic("DELETE", r.Id.Hex(), nil); err != nil {
+		if resp, err := rc.Elastic("DELETE", r.Id.Hex(), nil); err != nil {
 			log.Err(fmt.Sprintf("Error deleting from elstic: %s", err.Error()))
+		} else {
+			defer resp.Body.Close()
+			buf := new(bytes.Buffer)
+			buf.ReadFrom(resp.Body)
+			body := buf.String()
+			log.Info(fmt.Sprintf("Response from elastic: %s", body))
 		}
 
 		return nil, err
